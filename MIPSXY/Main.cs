@@ -12,7 +12,12 @@ namespace MIPSXY
 				return;
 			}
 			Console.Write("Files: ");
-			foreach(string s in args) { Console.Write(s+" "); }
+			foreach(string s in args) { 
+				Console.WriteLine(s+" "); 
+				Parser p=new Parser(opt);
+				p.Parse(s);
+				p.Print();
+			}
 			
 		}
 	}

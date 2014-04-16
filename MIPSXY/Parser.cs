@@ -7,37 +7,19 @@ namespace MIPSXY
 {
 	public enum Token
 	{
-		//Registers
-		r_zero=0,
-		r_at=1,
-		r_v0=2,
-		r_v1=3,
-		r_a0=4,
-		r_a1=5,
-		r_a2=6,
-		r_a3=7,
-		r_a4=8,
-		r_a5=9,
-		r_a6=10,
-		r_a7=11,
-		r_t0=8,
-		t_t1=9,
-		r_t2=10,
-		r_t3=11,
-		r_t4=12,
-		r_t5=13,
-		r_t6=14,
-		r_t7=15,
-		
-		//Instructions
-		i_add
-		
+		instruction,
+		register,
+		immediate,
+		offset,
+		label,
+		section,
+		comment
 	}
 	
 	public class Parser
 	{
 		Options options;
-		List<String> parsedLines;
+		List< KeyValuePair<Token,string> > Tokens=new List<KeyValuePair<Token, string>>();
 		public Parser(Options o)
 		{
 			options=o;
@@ -46,19 +28,64 @@ namespace MIPSXY
 			string[] lines = File.ReadAllLines(filename);
 			foreach(string line in lines) {
 				string parsedLine=line.Trim();
-				if(options.StripComments) { parsedLine=StripComments(parsedLine); }
-				parsedLines.Add(parsedLine);
+				if(string.IsNullOrEmpty(parsedLine)) continue;
+				Tokenize(parsedLine);
 			}
+			
 		}
 		
-		private string StripComments(string line) 
+		public void Print() 
+		{
+			foreach(var token in Tokens) 
+			{
+				System.Console.WriteLine(token.Key+" : "+token.Value+"  ");
+			}
+		}
+		private void Tokenize(string line) 
 		{
 			int CommentPosition=line.IndexOf('#');
 			if(CommentPosition!=-1) {
+				var newToken=new KeyValuePair<Token,string>(Token.comment, line.Substring(CommentPosition, (line.Length-CommentPosition)));
+				Tokens.Add(newToken);
 				line=line.Substring(0,CommentPosition);
 			}
-			return line;
+			string[] possibleTokens=line.Split(' ', ',');
+			foreach(string s in possibleTokens) {
+				string token=s.Trim();
+				if(string.IsNullOrEmpty(token)) continue;
+				if(token.Contains("(")) 
+				{
+					var newToken=new KeyValuePair<Token,string>(Token.offset, token);
+					Tokens.Add(newToken);
+				}
+				if(token[0]=='$') {
+					var newToken=new KeyValuePair<Token,string>(Token.register, token);
+					Tokens.Add(newToken);
+				}
+				else if(token[0]=='.')
+				{
+					var newToken=new KeyValuePair<Token,string>(Token.section, token);
+					Tokens.Add(newToken);
+				}
+				else if(token[token.Length-1]==':')
+				{
+					var newToken=new KeyValuePair<Token,string>(Token.label, token);
+					Tokens.Add(newToken);
+				}
+				else if(char.IsNumber(token[0])) 
+				{
+					var newToken=new KeyValuePair<Token,string>(Token.immediate, token);
+					Tokens.Add(newToken);
+				}
+				
+				else 
+				{
+					var newToken=new KeyValuePair<Token,string>(Token.instruction, token);
+					Tokens.Add(newToken);
+				}
+			}
 		}
+		
 		
 	}
 }
